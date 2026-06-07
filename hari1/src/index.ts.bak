@@ -1,0 +1,136 @@
+#!/usr/bin/env node
+
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+// Inisialisasi server
+const server = new McpServer({
+  name: "prompt-demo-server",
+  version: "1.0.0"
+});
+
+// ============================================
+// PROMPT 1: analyze_code (dari aktivitas sebelumnya)
+// ============================================
+const AnalyzeCodeArgs = {
+  fileName: z.string().min(1, "fileName harus diisi"),
+  language: z.string().min(1, "language harus diisi")
+};
+
+server.prompt(
+  "analyze_code",
+  "Menganalisis kode dan memberikan feedback terstruktur",
+  AnalyzeCodeArgs,
+  async ({ fileName, language }) => {
+    const promptText = `Anda adalah asisten code reviewer profesional.
+
+Lakukan analisis kode pada file berikut:
+
+**Nama File:** ${fileName}
+**Bahasa:** ${language}
+
+**Instruksi Analisis:**
+1. Periksa potential bugs dan error
+2. Evaluasi keamanan kode
+3. Berikan saran perbaikan untuk code quality
+4. Identifikasi code smells
+
+**Output Format:**
+- Ringkasan (1 paragraf)
+- Daftar issues (prioritas tinggi, sedang, rendah)
+- Saran perbaikan spesifik`;
+
+    return {
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: promptText
+          }
+        }
+      ]
+    };
+  }
+);
+
+// ============================================
+// PROMPT 2: doc_generator (TAMBAHAN - Aktivitas 5)
+// ============================================
+const DocGeneratorArgs = {
+  functionName: z.string().min(1, "functionName harus diisi"),
+  params: z.string().min(1, "params harus diisi"),
+  returnType: z.string().min(1, "returnType harus diisi")
+};
+
+server.prompt(
+  "doc_generator",
+  "Generate JSDoc/TSDoc documentation for a function based on its name, parameters, and return type",
+  DocGeneratorArgs,
+  async ({ functionName, params, returnType }) => {
+    const promptText = `Buat dokumentasi JSDoc/TSDoc untuk fungsi berikut:
+
+Fungsi: ${functionName}
+Parameter: ${params}
+Return: ${returnType}
+
+Format dokumentasi harus mencakup:
+- Deskripsi singkat tentang apa yang dilakukan fungsi
+- @param untuk setiap parameter (dengan deskripsi)
+- @returns dengan deskripsi nilai yang dikembalikan
+- @example dengan contoh penggunaan fungsi
+
+Gunakan gaya penulisan JSDoc yang sesuai dengan standar.
+
+Contoh format yang diharapkan:
+
+/**
+ * [Deskripsi singkat tentang fungsi]
+ *
+ * @param {type} paramName - Deskripsi parameter
+ * @returns {type} Deskripsi nilai yang dikembalikan
+ *
+ * @example
+ * // Contoh penggunaan
+ * ${functionName}(value);
+ */`;
+
+    return {
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: promptText
+          }
+        }
+      ]
+    };
+  }
+);
+
+// ============================================
+// TOOL: ping (untuk testing)
+// ============================================
+server.tool("ping", "Send a ping to check if server is alive", {}, async () => ({
+  content: [{ type: "text", text: "pong" }]
+}));
+
+// ============================================
+// MAIN FUNCTION
+// ============================================
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error("✅ MCP Server with Prompts is running");
+  console.error("📋 Available prompts:");
+  console.error("   - analyze_code: Menganalisis kode dengan feedback terstruktur");
+  console.error("   - doc_generator: Generate JSDoc/TSDoc documentation");
+  console.error("🔧 Available tools: ping");
+}
+
+main().catch((error) => {
+  console.error("❌ Fatal error:", error);
+  process.exit(1);
+});

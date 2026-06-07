@@ -1,0 +1,21 @@
+{
+    "name": "doc_generator",
+    "description": "Generate JSDoc/TSDoc documentation for a function",
+    "arguments": [
+        {
+            "name": "functionName",
+            "description": "Nama fungsi yang akan didokumentasikan",
+            "required": true
+        },
+        {
+            "name": "params",
+            "description": "Parameter fungsi (contoh: (name: string, age: number) atau (userId, options))",
+            "required": true
+        },
+        {
+            "name": "returnType",
+            "description": "Tipe data yang dikembalikan fungsi (contoh: Promise<User>, string, void, boolean)",
+            "required": true
+        }
+    ]
+}

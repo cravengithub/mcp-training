@@ -1,0 +1,128 @@
+#!/usr/bin/env node
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+import fs from 'fs/promises';
+import path from 'path';
+import process from 'process';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const server = new McpServer({
+    name: "mcp-server-with-prompts",
+    version: "1.0.0"
+});
+// ============ PROMPT: Analisis Kode ============
+// Mendefinisikan schema untuk argumen prompt
+const AnalyzeCodeArgs = {
+    fileName: z.string().min(1, "fileName harus diisi"),
+    language: z.string().min(1, "language harus diisi")
+};
+// Register prompt menggunakan server.prompt()
+server.prompt(
+    "analyze_code", // Nama prompt
+    "Menganalisis kode dan memberikan feedback terstruktur", // Deskripsi
+    AnalyzeCodeArgs, // Schema argumen
+    async ({ fileName, language }) => { // Handler
+        // Baca file yang diminta
+        let fileContent = "";
+        try {
+            // Cari file di direktori data
+            const filePath = path.join(__dirname, "../data", fileName);
+            fileContent = await fs.readFile(filePath, 'utf-8');
+        } catch (error) {
+            fileContent = `[File tidak ditemukan: ${fileName}]`;
+        }
+        // Buat prompt lengkap
+        const promptText = `Anda adalah asisten code reviewer profesional.
+Lakukan analisis kode pada file berikut:
+**Nama File:** ${fileName}
+**Bahasa:** ${language}
+**Konten Kode:**
+\`\`\`
+${fileContent}
+\`\`\`
+**Instruksi Analisis:**
+1. Periksa potential bugs dan error
+2. Evaluasi keamanan kode (injection, XSS, dll)
+3. Berikan saran perbaikan untuk code quality
+4. Identifikasi code smells yang perlu di-refactor
+**Output Format:**
+- Ringkasan (1 paragraf)
+- Daftar issues (prioritas tinggi, sedang, rendah)
+- Saran perbaikan spesifik untuk setiap issue
+Gunakan bahasa Indonesia yang profesional untuk memberikan respons.`;
+        return {
+            messages: [
+                {
+                    role: "user",
+                    content: {
+                        type: "text",
+                        text: promptText
+                    }
+                }
+            ]
+        };
+    }
+);
+// ============ PROMOT: Debugging Helper ============
+const DebugArgs = {
+    errorMessage: z.string(),
+    language: z.string()
+};
+server.prompt(
+    "debug_helper",
+    "Membantu debugging error dengan langkah-langkah sistematis",
+    DebugArgs,
+    async ({ errorMessage, language }) => {
+        const promptText = `Saya mengalami error berikut dalam kode ${language}:
+**Error:**
+${errorMessage}
+Bantu saya melakukan debugging dengan:
+1. Menjelaskan penyebab umum error ini
+2. Memberikan 3-5 langkah troubleshooting sistematis
+3. Contoh kode perbaikan jika memungkinkan
+4. Saran tools untuk mendeteksi error serupa di masa depan`;
+        return {
+            messages: [{ role: "user", content: { type: "text", text: promptText } }]
+        };
+    }
+);
+// ============ RESOURCE: Users Data (dari sesi sebelumnya) ============
+server.resource(
+    "users",
+    "file:///data/users.json",
+    async (uri) => {
+        try {
+            const filePath = path.join(__dirname, "../data/users.json");
+            const content = await fs.readFile(filePath, 'utf-8');
+            return {
+                contents: [{
+                    uri: uri.href,
+                    mimeType: "application/json",
+                    text: content
+                }]
+            };
+        } catch (error) {
+            throw new Error(`Resource not found: ${uri}`);
+        }
+    }
+);
+// ============ TOOL: Ping (opsional) ============
+server.tool("ping", "Send a ping to the server", async () => ({
+    content: [{ type: "text", text: "pong" }]
+}));
+// ============ MAIN ============
+async function main() {
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error("✅ MCP Server with Prompts is running");
+    console.error("📋 Available prompts: analyze_code, debug_helper");
+    console.error("📁 Available resources: users");
+    console.error("🔧 Available tools: ping");
+}
+main().catch((error) => {
+    console.error("❌ Fatal error:", error);
+    process.exit(1);
+});

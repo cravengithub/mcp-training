@@ -1,0 +1,12 @@
+{
+    "appName": "MCP Demo App",
+    "version": "1.0.0",
+    "maxConnections": 10,
+    "timeout": 30,
+    "features": {
+        "logging": true,
+        "cache": false,
+        "metrics": true
+    },
+    "lastUpdated": "2026-05-31T00:00:00.000Z"
+}

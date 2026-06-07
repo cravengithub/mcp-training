@@ -1,0 +1,13 @@
+Buat dokumentasi JSDoc/TSDoc untuk fungsi berikut:
+
+Fungsi: {{functionName}}
+Parameter: {{params}}
+Return: {{returnType}}
+
+Format dokumentasi harus mencakup:
+- Deskripsi singkat tentang apa yang dilakukan fungsi
+- @param untuk setiap parameter (dengan deskripsi)
+- @returns dengan deskripsi nilai yang dikembalikan
+- @example dengan contoh penggunaan fungsi
+
+Gunakan gaya penulisan JSDoc yang sesuai dengan standar.

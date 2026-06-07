@@ -1,0 +1,24 @@
+{
+    "users": [
+        {
+            "id": 1,
+            "name": "Budi Santoso",
+            "email": "budi@example.com",
+            "role": "developer"
+        },
+        {
+            "id": 2,
+            "name": "Siti Nurhaliza",
+            "email": "siti@example.com",
+            "role": "designer"
+        },
+        {
+            "id": 3,
+            "name": "Agus Wijaya",
+            "email": "agus@example.com",
+            "role": "project manager"
+        }
+    ],
+    "total": 3,
+    "lastUpdated": "2026-05-28T00:00:00.000Z"
+}
